@@ -1,4 +1,6 @@
-# Nightwatch JSON Reporter
+# Nightwatch JSON test results report
+
+> Save Nightwatch test results as a JSON file
 
 A nightwatch.js JSON test reporter to create test reports that follow the CTRF standard.
 
