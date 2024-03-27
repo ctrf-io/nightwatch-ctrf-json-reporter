@@ -29,7 +29,7 @@ class GenerateCtrfReport {
   private readonly ctrfReport: CtrfReport
   readonly ctrfEnvironment: CtrfEnvironment
   private reporterOptions: ReporterConfigOptions
-  readonly reporterName = 'cypress-ctrf-json-reporter'
+  readonly reporterName = 'nightwatch-ctrf-json-reporter'
   readonly defaultOutputFile = 'ctrf-report.json'
   readonly defaultOutputDir = 'ctrf'
   filename = this.defaultOutputFile
