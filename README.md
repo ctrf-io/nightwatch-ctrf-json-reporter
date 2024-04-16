@@ -15,8 +15,6 @@ It means a lot to us and helps us grow this open source library.
 - Generate JSON test reports that are [CTRF](https://ctrf.io) compliant
 - Straightforward integration with nightwatch
 
-
-
 ```json
 {
   "results": {
