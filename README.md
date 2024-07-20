@@ -8,7 +8,7 @@ A nightwatch.js JSON test reporter to create test reports that follow the CTRF s
 
 ## Help us grow CTRF
 
-⭐ **If you find this project useful, please consider following the CTRF organisation and giving this repository a star** ⭐
+⭐ **If you find this project useful, please consider following the [CTRF organisation](https://github.com/ctrf-io) and giving this repository a star** ⭐
 
 **It means a lot to us and helps us grow this open source library.**
 
