@@ -36,8 +36,8 @@ export interface CtrfTest {
   tags?: string[]
   type?: string
   filePath?: string
-  retry?: number
-  flake?: boolean
+  retries?: number
+  flaky?: boolean
   attempts?: CtrfTest[]
   browser?: string
   device?: string
@@ -55,6 +55,11 @@ export interface CtrfEnvironment {
   osVersion?: string
   buildName?: string
   buildNumber?: string
+  buildUrl?: string
+  repositoryName?: string
+  repositoryUrl?: string
+  branchName?: string
+  testEnvironment?: string
   extra?: Record<string, any>
 }
 
