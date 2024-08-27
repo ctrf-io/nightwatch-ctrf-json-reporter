@@ -16,6 +16,9 @@ import {
 interface ReporterConfigOptions {
   outputFile?: string
   outputDir?: string
+  minimal?: boolean
+  screenshot?: boolean
+  testType?: string
   appName?: string | undefined
   appVersion?: string | undefined
   osPlatform?: string | undefined
@@ -23,6 +26,11 @@ interface ReporterConfigOptions {
   osVersion?: string | undefined
   buildName?: string | undefined
   buildNumber?: string | undefined
+  buildUrl?: string | undefined
+  repositoryName?: string | undefined
+  repositoryUrl?: string | undefined
+  branchName?: string | undefined
+  testEnvironment?: string | undefined
 }
 
 class GenerateCtrfReport {
@@ -77,6 +85,8 @@ class GenerateCtrfReport {
     this.reporterOptions = {
       outputFile: options.globals?.ctrf?.outputFile ?? this.defaultOutputFile,
       outputDir: options.globals?.ctrf?.outputDir ?? this.defaultOutputDir,
+      minimal: options.globals?.ctrf?.minimal ?? false,
+      testType: options.globals?.ctrf?.testType ?? 'e2e',
       appName: options.globals?.ctrf?.appName ?? undefined,
       appVersion: options.globals?.ctrf?.appVersion ?? undefined,
       osPlatform: options.globals?.ctrf?.osPlatform ?? undefined,
@@ -84,6 +94,11 @@ class GenerateCtrfReport {
       osVersion: options.globals?.ctrf?.osVersion ?? undefined,
       buildName: options.globals?.ctrf?.buildName ?? undefined,
       buildNumber: options.globals?.ctrf?.buildNumber ?? undefined,
+      buildUrl: options.globals?.ctrf?.buildUrl ?? undefined,
+      repositoryName: options.globals?.ctrf?.repositoryName ?? undefined,
+      repositoryUrl: options.globals?.ctrf?.repositoryUrl ?? undefined,
+      branchName: options.globals?.ctrf?.branchName ?? undefined,
+      testEnvironment: options.globals?.ctrf?.testEnvironment ?? undefined,
     }
 
     this.setEnvironmentDetails(this.reporterOptions ?? {})
@@ -137,11 +152,19 @@ class GenerateCtrfReport {
     } else {
       for (const testName in module.completed) {
         const test = module.completed[testName]
-        tests.push({
+
+        const result: CtrfTest = {
           name: testName,
           status: this.mapStatus(test.status),
           duration: test.timeMs,
-        })
+        }
+
+        if (test.errors > 0) {
+          result.message = test.lastError.message
+          result.trace = test.stackTrace
+        }
+
+        tests.push(result)
       }
     }
 
@@ -219,6 +242,22 @@ class GenerateCtrfReport {
     }
     if (reporterConfigOptions.buildNumber !== undefined) {
       this.ctrfEnvironment.buildNumber = reporterConfigOptions.buildNumber
+    }
+    if (reporterConfigOptions.buildUrl !== undefined) {
+      this.ctrfEnvironment.buildUrl = reporterConfigOptions.buildUrl
+    }
+    if (reporterConfigOptions.repositoryName !== undefined) {
+      this.ctrfEnvironment.repositoryName = reporterConfigOptions.repositoryName
+    }
+    if (reporterConfigOptions.repositoryUrl !== undefined) {
+      this.ctrfEnvironment.repositoryUrl = reporterConfigOptions.repositoryUrl
+    }
+    if (reporterConfigOptions.branchName !== undefined) {
+      this.ctrfEnvironment.branchName = reporterConfigOptions.branchName
+    }
+    if (reporterConfigOptions.testEnvironment !== undefined) {
+      this.ctrfEnvironment.testEnvironment =
+        reporterConfigOptions.testEnvironment
     }
   }
 

@@ -1,16 +1,21 @@
 # Nightwatch JSON test results report
 
-> Save Nightwatch test results as a JSON file
+> Save a common JSON test report for nightwatch tests
 
 A nightwatch.js JSON test reporter to create test reports that follow the CTRF standard.
 
 [Common Test Report Format](https://ctrf.io) ensures the generation of uniform JSON test reports, independent of programming languages or test framework in use.
 
-## Help us grow CTRF
+## **⭐⭐ If you find this project useful, consider giving it a GitHub star ⭐⭐**
 
-⭐ **If you find this project useful, please consider following the [CTRF organisation](https://github.com/ctrf-io) and giving this repository a star** ⭐
+## You can help us grow
 
-**It means a lot to us and helps us grow this open source library.**
+Support our mission to enhance JSON test reporting by:
+
+- **⭐ Starring this repository to show your support. ⭐**
+- **🙌 Following our [GitHub page here](https://github.com/ctrf-io). 🙌**
+
+Thank you! Your support is invaluable to us! 💙
 
 ## Features
 
@@ -49,16 +54,6 @@ A nightwatch.js JSON test reporter to create test reports that follow the CTRF s
 }
 ```
 
-## What is CTRF?
-
-CTRF is a universal JSON test report schema that addresses the lack of a standardized format for JSON test reports.
-
-**Consistency Across Tools:** Different testing tools and frameworks often produce reports in varied formats. CTRF ensures a uniform structure, making it easier to understand and compare reports, regardless of the testing tool used.
-
-**Language and Framework Agnostic:** It provides a universal reporting schema that works seamlessly with any programming language and testing framework.
-
-**Facilitates Better Analysis:** With a standardized format, programatically analyzing test outcomes across multiple platforms becomes more straightforward.
-
 ## Installation
 
 ```bash
@@ -90,6 +85,11 @@ The reporter supports several configuration options, add to nightwatch.conf.js:
           osVersion: '5.4.0',             // Optional: Specify the OS version.
           buildName: 'MyApp Build',       // Optional: Specify the build name.
           buildNumber: '100',             // Optional: Specify the build number.
+          buildUrl: "https://ctrf.io",    // Optional: Specify the build url.
+          repositoryName: "ctrf-json",    // Optional: Specify the repository name.
+          repositoryUrl: "https://gh.io", // Optional: Specify the repository url.
+          branchName: "main",             // Optional: Specify the branch name.
+          testEnvironment: "staging"      // Optional: Specify the test environment (e.g. staging, production).
         },
       }
 ```
@@ -103,6 +103,18 @@ The test object in the report includes the following [CTRF properties](https://c
 | `name`     | String | Required | The name of the test.                                                               |
 | `status`   | String | Required | The outcome of the test. One of: `passed`, `failed`, `skipped`, `pending`, `other`. |
 | `duration` | Number | Required | The time taken for the test execution, in milliseconds.                             |
+| `message`  | String | Optional | The failure message if the test failed.                                             |
+| `trace`    | String | Optional | The stack trace captured if the test failed.                                        |
+
+## What is CTRF?
+
+CTRF is a universal JSON test report schema that addresses the lack of a standardized format for JSON test reports.
+
+**Consistency Across Tools:** Different testing tools and frameworks often produce reports in varied formats. CTRF ensures a uniform structure, making it easier to understand and compare reports, regardless of the testing tool used.
+
+**Language and Framework Agnostic:** It provides a universal reporting schema that works seamlessly with any programming language and testing framework.
+
+**Facilitates Better Analysis:** With a standardized format, programatically analyzing test outcomes across multiple platforms becomes more straightforward.
 
 ## Support Us
 
