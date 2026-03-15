@@ -1,6 +1,6 @@
 {
   "name": "nightwatch-ctrf-json-reporter",
-  "version": "0.0.6",
+  "version": "0.0.6-next-1",
   "description": "Create a common JSON test report for Nightwatch tests",
   "main": "dist/index.js",
   "scripts": {
@@ -57,5 +57,8 @@
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.0"
+  },
+  "dependencies": {
+    "ctrf": "^0.2.0-next-0"
   }
 }
