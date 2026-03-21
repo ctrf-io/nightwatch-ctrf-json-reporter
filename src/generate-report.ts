@@ -2,16 +2,34 @@ import fs = require('fs')
 import path = require('path')
 import { type NightwatchOptions } from 'nightwatch'
 import {
-  type CtrfEnvironment,
-  type CtrfReport,
-  type CtrfTest,
-  type CtrfTestState,
-} from '../types/ctrf.d'
+  type CTRFReport,
+  type Test as CtrfTestBase,
+  type TestStatus,
+  type Environment,
+  type Results,
+} from 'ctrf'
 import {
   type NightwatchModule,
   type NightwatchModuleWithCompleted,
   type NightwatchResult,
 } from '../types/nightwatch.d'
+
+// Local overrides to keep backward-compatible string suite (canonical is string[])
+// TODO(v1): align suite to string[] and remove this override
+type NightwatchTest = Omit<CtrfTestBase, 'suite'> & {
+  suite?: string | string[]
+}
+// TODO(v1): align buildNumber to number and remove this override
+type NightwatchEnvironment = Omit<Environment, 'buildNumber'> & {
+  buildNumber?: string | number
+}
+type NightwatchResults = Omit<Results, 'tests' | 'environment'> & {
+  tests: NightwatchTest[]
+  environment?: NightwatchEnvironment
+}
+type NightwatchCTRFReport = Omit<CTRFReport, 'results'> & {
+  results: NightwatchResults
+}
 
 interface ReporterConfigOptions {
   outputFile?: string
@@ -34,8 +52,8 @@ interface ReporterConfigOptions {
 }
 
 class GenerateCtrfReport {
-  private readonly ctrfReport: CtrfReport
-  readonly ctrfEnvironment: CtrfEnvironment
+  private readonly ctrfReport: NightwatchCTRFReport
+  readonly ctrfEnvironment: NightwatchEnvironment
   private reporterOptions: ReporterConfigOptions
   readonly reporterName = 'nightwatch-ctrf-json-reporter'
   readonly defaultOutputFile = 'ctrf-report.json'
@@ -45,6 +63,9 @@ class GenerateCtrfReport {
   constructor() {
     this.reporterOptions = {}
     this.ctrfReport = {
+      reportFormat: 'CTRF',
+      specVersion: '0.0.0',
+      generatedBy: 'nightwatch-ctrf-json-reporter',
       results: {
         tool: {
           name: 'nightwatch.js',
@@ -128,7 +149,7 @@ class GenerateCtrfReport {
   }
 
   getTestsFromResults(results: NightwatchResult): void {
-    let tests: CtrfTest[] = []
+    let tests: NightwatchTest[] = []
     for (const moduleName in results.modules) {
       tests = tests.concat(
         this.getTestsFromModule(results.modules[moduleName], moduleName)
@@ -140,8 +161,8 @@ class GenerateCtrfReport {
   getTestsFromModule(
     module: NightwatchModuleWithCompleted,
     moduleName: string
-  ): CtrfTest[] {
-    let tests: CtrfTest[] = []
+  ): NightwatchTest[] {
+    let tests: NightwatchTest[] = []
 
     if (this.isTestSkipped(module)) {
       tests.push({
@@ -153,7 +174,7 @@ class GenerateCtrfReport {
       for (const testName in module.completed) {
         const test = module.completed[testName]
 
-        const result: CtrfTest = {
+        const result: NightwatchTest = {
           name: testName,
           status: this.mapStatus(test.status),
           duration: test.timeMs,
@@ -173,7 +194,7 @@ class GenerateCtrfReport {
     return tests
   }
 
-  getSkippedAtRuntimeTests(module: NightwatchModule): CtrfTest[] {
+  getSkippedAtRuntimeTests(module: NightwatchModule): NightwatchTest[] {
     return module.skippedAtRuntime.map((skippedTestName: string) => ({
       name: skippedTestName,
       status: 'skipped',
@@ -185,7 +206,7 @@ class GenerateCtrfReport {
     return Object.keys(module.completed).length === 0
   }
 
-  getTestTotals(tests: CtrfTest[]): void {
+  getTestTotals(tests: NightwatchTest[]): void {
     this.ctrfReport.results.summary = {
       ...this.ctrfReport.results.summary,
       tests: tests.length,
@@ -206,7 +227,7 @@ class GenerateCtrfReport {
     }
   }
 
-  private mapStatus(nightwatchStatus: string): CtrfTestState {
+  private mapStatus(nightwatchStatus: string): TestStatus {
     switch (nightwatchStatus) {
       case 'pass':
         return 'passed'
@@ -261,11 +282,11 @@ class GenerateCtrfReport {
     }
   }
 
-  hasEnvironmentDetails(environment: CtrfEnvironment): boolean {
+  hasEnvironmentDetails(environment: NightwatchEnvironment): boolean {
     return Object.keys(environment).length > 0
   }
 
-  private writeReportToFile(data: CtrfReport): void {
+  private writeReportToFile(data: NightwatchCTRFReport): void {
     const filePath = path.join(
       this.reporterOptions.outputDir ?? this.defaultOutputDir,
       this.reporterOptions.outputFile ?? this.defaultOutputFile
