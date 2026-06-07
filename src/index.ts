@@ -1,3 +1,3 @@
-import GenerateCtrfReport from './generate-report'
+import GenerateCtrfReport from "./generate-report";
 
-module.exports = new GenerateCtrfReport()
+module.exports = new GenerateCtrfReport();

@@ -1,308 +1,309 @@
-import fs = require('fs')
-import path = require('path')
-import { type NightwatchOptions } from 'nightwatch'
-import {
-  type CTRFReport,
-  type Test as CtrfTestBase,
-  type TestStatus,
-  type Environment,
-  type Results,
-} from 'ctrf'
-import {
-  type NightwatchModule,
-  type NightwatchModuleWithCompleted,
-  type NightwatchResult,
-} from '../types/nightwatch.d'
+import fs = require("node:fs");
+import path = require("node:path");
+import type { NightwatchOptions } from "nightwatch";
+import type {
+	CTRFReport,
+	Test as CtrfTestBase,
+	TestStatus,
+	Environment,
+	Results,
+} from "ctrf";
+import type {
+	NightwatchModule,
+	NightwatchModuleWithCompleted,
+	NightwatchResult,
+} from "../types/nightwatch.d";
 
 // Local overrides to keep backward-compatible string suite (canonical is string[])
 // TODO(v1): align suite to string[] and remove this override
-type NightwatchTest = Omit<CtrfTestBase, 'suite'> & {
-  suite?: string | string[]
-}
+type NightwatchTest = Omit<CtrfTestBase, "suite"> & {
+	suite?: string | string[];
+};
 // TODO(v1): align buildNumber to number and remove this override
-type NightwatchEnvironment = Omit<Environment, 'buildNumber'> & {
-  buildNumber?: string | number
-}
-type NightwatchResults = Omit<Results, 'tests' | 'environment'> & {
-  tests: NightwatchTest[]
-  environment?: NightwatchEnvironment
-}
-type NightwatchCTRFReport = Omit<CTRFReport, 'results'> & {
-  results: NightwatchResults
-}
+type NightwatchEnvironment = Omit<Environment, "buildNumber"> & {
+	buildNumber?: string | number;
+};
+type NightwatchResults = Omit<Results, "tests" | "environment"> & {
+	tests: NightwatchTest[];
+	environment?: NightwatchEnvironment;
+};
+type NightwatchCTRFReport = Omit<CTRFReport, "results"> & {
+	results: NightwatchResults;
+};
 
 interface ReporterConfigOptions {
-  outputFile?: string
-  outputDir?: string
-  minimal?: boolean
-  screenshot?: boolean
-  testType?: string
-  appName?: string | undefined
-  appVersion?: string | undefined
-  osPlatform?: string | undefined
-  osRelease?: string | undefined
-  osVersion?: string | undefined
-  buildName?: string | undefined
-  buildNumber?: string | undefined
-  buildUrl?: string | undefined
-  repositoryName?: string | undefined
-  repositoryUrl?: string | undefined
-  branchName?: string | undefined
-  testEnvironment?: string | undefined
+	outputFile?: string;
+	outputDir?: string;
+	minimal?: boolean;
+	screenshot?: boolean;
+	testType?: string;
+	appName?: string | undefined;
+	appVersion?: string | undefined;
+	osPlatform?: string | undefined;
+	osRelease?: string | undefined;
+	osVersion?: string | undefined;
+	buildName?: string | undefined;
+	buildNumber?: string | undefined;
+	buildUrl?: string | undefined;
+	repositoryName?: string | undefined;
+	repositoryUrl?: string | undefined;
+	branchName?: string | undefined;
+	testEnvironment?: string | undefined;
 }
 
 class GenerateCtrfReport {
-  private readonly ctrfReport: NightwatchCTRFReport
-  readonly ctrfEnvironment: NightwatchEnvironment
-  private reporterOptions: ReporterConfigOptions
-  readonly reporterName = 'nightwatch-ctrf-json-reporter'
-  readonly defaultOutputFile = 'ctrf-report.json'
-  readonly defaultOutputDir = 'ctrf'
-  filename = this.defaultOutputFile
+	private readonly ctrfReport: NightwatchCTRFReport;
+	readonly ctrfEnvironment: NightwatchEnvironment;
+	private reporterOptions: ReporterConfigOptions;
+	readonly reporterName = "nightwatch-ctrf-json-reporter";
+	readonly defaultOutputFile = "ctrf-report.json";
+	readonly defaultOutputDir = "ctrf";
+	filename = this.defaultOutputFile;
 
-  constructor() {
-    this.reporterOptions = {}
-    this.ctrfReport = {
-      reportFormat: 'CTRF',
-      specVersion: '0.0.0',
-      generatedBy: 'nightwatch-ctrf-json-reporter',
-      results: {
-        tool: {
-          name: 'nightwatch.js',
-        },
-        summary: {
-          tests: 0,
-          passed: 0,
-          failed: 0,
-          pending: 0,
-          skipped: 0,
-          other: 0,
-          start: Date.now(),
-          stop: 0,
-        },
-        tests: [],
-      },
-    }
+	constructor() {
+		this.reporterOptions = {};
+		this.ctrfReport = {
+			reportFormat: "CTRF",
+			specVersion: "0.0.0",
+			generatedBy: "nightwatch-ctrf-json-reporter",
+			results: {
+				tool: {
+					name: "nightwatch.js",
+				},
+				summary: {
+					tests: 0,
+					passed: 0,
+					failed: 0,
+					pending: 0,
+					skipped: 0,
+					other: 0,
+					start: Date.now(),
+					stop: 0,
+				},
+				tests: [],
+			},
+		};
 
-    this.ctrfEnvironment = {}
+		this.ctrfEnvironment = {};
 
-    if (this.reporterOptions?.outputFile !== undefined)
-      this.setFilename(this.reporterOptions.outputFile)
+		if (this.reporterOptions?.outputFile !== undefined)
+			this.setFilename(this.reporterOptions.outputFile);
 
-    if (
-      !fs.existsSync(this.reporterOptions.outputDir ?? this.defaultOutputDir)
-    ) {
-      fs.mkdirSync(this.reporterOptions.outputDir ?? this.defaultOutputDir, {
-        recursive: true,
-      })
-    }
-  }
+		if (
+			!fs.existsSync(this.reporterOptions.outputDir ?? this.defaultOutputDir)
+		) {
+			fs.mkdirSync(this.reporterOptions.outputDir ?? this.defaultOutputDir, {
+				recursive: true,
+			});
+		}
+	}
 
-  write(
-    results: NightwatchResult,
-    options: NightwatchOptions,
-    done: () => void
-  ): void {
-    this.reporterOptions = {
-      outputFile: options.globals?.ctrf?.outputFile ?? this.defaultOutputFile,
-      outputDir: options.globals?.ctrf?.outputDir ?? this.defaultOutputDir,
-      minimal: options.globals?.ctrf?.minimal ?? false,
-      testType: options.globals?.ctrf?.testType ?? 'e2e',
-      appName: options.globals?.ctrf?.appName ?? undefined,
-      appVersion: options.globals?.ctrf?.appVersion ?? undefined,
-      osPlatform: options.globals?.ctrf?.osPlatform ?? undefined,
-      osRelease: options.globals?.ctrf?.osRelease ?? undefined,
-      osVersion: options.globals?.ctrf?.osVersion ?? undefined,
-      buildName: options.globals?.ctrf?.buildName ?? undefined,
-      buildNumber: options.globals?.ctrf?.buildNumber ?? undefined,
-      buildUrl: options.globals?.ctrf?.buildUrl ?? undefined,
-      repositoryName: options.globals?.ctrf?.repositoryName ?? undefined,
-      repositoryUrl: options.globals?.ctrf?.repositoryUrl ?? undefined,
-      branchName: options.globals?.ctrf?.branchName ?? undefined,
-      testEnvironment: options.globals?.ctrf?.testEnvironment ?? undefined,
-    }
+	write(
+		results: NightwatchResult,
+		options: NightwatchOptions,
+		done: () => void,
+	): void {
+		this.reporterOptions = {
+			outputFile: options.globals?.ctrf?.outputFile ?? this.defaultOutputFile,
+			outputDir: options.globals?.ctrf?.outputDir ?? this.defaultOutputDir,
+			minimal: options.globals?.ctrf?.minimal ?? false,
+			testType: options.globals?.ctrf?.testType ?? "e2e",
+			appName: options.globals?.ctrf?.appName ?? undefined,
+			appVersion: options.globals?.ctrf?.appVersion ?? undefined,
+			osPlatform: options.globals?.ctrf?.osPlatform ?? undefined,
+			osRelease: options.globals?.ctrf?.osRelease ?? undefined,
+			osVersion: options.globals?.ctrf?.osVersion ?? undefined,
+			buildName: options.globals?.ctrf?.buildName ?? undefined,
+			buildNumber: options.globals?.ctrf?.buildNumber ?? undefined,
+			buildUrl: options.globals?.ctrf?.buildUrl ?? undefined,
+			repositoryName: options.globals?.ctrf?.repositoryName ?? undefined,
+			repositoryUrl: options.globals?.ctrf?.repositoryUrl ?? undefined,
+			branchName: options.globals?.ctrf?.branchName ?? undefined,
+			testEnvironment: options.globals?.ctrf?.testEnvironment ?? undefined,
+		};
 
-    this.setEnvironmentDetails(this.reporterOptions ?? {})
-    if (this.hasEnvironmentDetails(this.ctrfEnvironment)) {
-      this.ctrfReport.results.environment = this.ctrfEnvironment
-    }
+		this.setEnvironmentDetails(this.reporterOptions ?? {});
+		if (this.hasEnvironmentDetails(this.ctrfEnvironment)) {
+			this.ctrfReport.results.environment = this.ctrfEnvironment;
+		}
 
-    if (this.reporterOptions?.outputFile !== undefined)
-      this.setFilename(this.reporterOptions.outputFile)
+		if (this.reporterOptions?.outputFile !== undefined)
+			this.setFilename(this.reporterOptions.outputFile);
 
-    this.ctrfReport.results.summary.stop = Date.parse(results.startTimestamp)
-    this.ctrfReport.results.summary.start = Date.parse(results.endTimestamp)
+		this.ctrfReport.results.summary.stop = Date.parse(results.startTimestamp);
+		this.ctrfReport.results.summary.start = Date.parse(results.endTimestamp);
 
-    this.getTestsFromResults(results)
-    this.getTestTotals(this.ctrfReport.results.tests)
-    this.writeReportToFile(this.ctrfReport)
+		this.getTestsFromResults(results);
+		this.getTestTotals(this.ctrfReport.results.tests);
+		this.writeReportToFile(this.ctrfReport);
 
-    done()
-  }
+		done();
+	}
 
-  private setFilename(filename: string): void {
-    if (filename.endsWith('.json')) {
-      this.filename = filename
-    } else {
-      this.filename = `${filename}.json`
-    }
-  }
+	private setFilename(filename: string): void {
+		if (filename.endsWith(".json")) {
+			this.filename = filename;
+		} else {
+			this.filename = `${filename}.json`;
+		}
+	}
 
-  getTestsFromResults(results: NightwatchResult): void {
-    let tests: NightwatchTest[] = []
-    for (const moduleName in results.modules) {
-      tests = tests.concat(
-        this.getTestsFromModule(results.modules[moduleName], moduleName)
-      )
-    }
-    this.ctrfReport.results.tests = tests
-  }
+	getTestsFromResults(results: NightwatchResult): void {
+		let tests: NightwatchTest[] = [];
+		for (const moduleName in results.modules) {
+			tests = tests.concat(
+				this.getTestsFromModule(results.modules[moduleName], moduleName),
+			);
+		}
+		this.ctrfReport.results.tests = tests;
+	}
 
-  getTestsFromModule(
-    module: NightwatchModuleWithCompleted,
-    moduleName: string
-  ): NightwatchTest[] {
-    let tests: NightwatchTest[] = []
+	getTestsFromModule(
+		module: NightwatchModuleWithCompleted,
+		moduleName: string,
+	): NightwatchTest[] {
+		let tests: NightwatchTest[] = [];
 
-    if (this.isTestSkipped(module)) {
-      tests.push({
-        name: moduleName,
-        status: 'skipped',
-        duration: 0,
-      })
-    } else {
-      for (const testName in module.completed) {
-        const test = module.completed[testName]
+		if (this.isTestSkipped(module)) {
+			tests.push({
+				name: moduleName,
+				status: "skipped",
+				duration: 0,
+			});
+		} else {
+			for (const testName in module.completed) {
+				const test = module.completed[testName];
 
-        const result: NightwatchTest = {
-          name: testName,
-          status: this.mapStatus(test.status),
-          duration: test.timeMs,
-        }
+				const result: NightwatchTest = {
+					name: testName,
+					status: this.mapStatus(test.status),
+					duration: test.timeMs,
+				};
 
-        if (test.errors > 0) {
-          result.message = test.lastError.message
-          result.trace = test.stackTrace
-        }
+				if (test.errors > 0) {
+					result.message = test.lastError.message;
+					result.trace = test.stackTrace;
+				}
 
-        tests.push(result)
-      }
-    }
+				tests.push(result);
+			}
+		}
 
-    tests = tests.concat(this.getSkippedAtRuntimeTests(module))
+		tests = tests.concat(this.getSkippedAtRuntimeTests(module));
 
-    return tests
-  }
+		return tests;
+	}
 
-  getSkippedAtRuntimeTests(module: NightwatchModule): NightwatchTest[] {
-    return module.skippedAtRuntime.map((skippedTestName: string) => ({
-      name: skippedTestName,
-      status: 'skipped',
-      duration: 0,
-    }))
-  }
+	getSkippedAtRuntimeTests(module: NightwatchModule): NightwatchTest[] {
+		return module.skippedAtRuntime.map((skippedTestName: string) => ({
+			name: skippedTestName,
+			status: "skipped",
+			duration: 0,
+		}));
+	}
 
-  isTestSkipped(module: { completed: Record<string, unknown> }): boolean {
-    return Object.keys(module.completed).length === 0
-  }
+	isTestSkipped(module: { completed: Record<string, unknown> }): boolean {
+		return Object.keys(module.completed).length === 0;
+	}
 
-  getTestTotals(tests: NightwatchTest[]): void {
-    this.ctrfReport.results.summary = {
-      ...this.ctrfReport.results.summary,
-      tests: tests.length,
-      passed: tests.filter(
-        (test: { status: string }) => test.status === 'passed'
-      ).length,
-      failed: tests.filter(
-        (test: { status: string }) => test.status === 'failed'
-      ).length,
-      pending: tests.filter(
-        (test: { status: string }) => test.status === 'pending'
-      ).length,
-      skipped: tests.filter(
-        (test: { status: string }) => test.status === 'skipped'
-      ).length,
-      other: tests.filter((test: { status: string }) => test.status === 'other')
-        .length,
-    }
-  }
+	getTestTotals(tests: NightwatchTest[]): void {
+		this.ctrfReport.results.summary = {
+			...this.ctrfReport.results.summary,
+			tests: tests.length,
+			passed: tests.filter(
+				(test: { status: string }) => test.status === "passed",
+			).length,
+			failed: tests.filter(
+				(test: { status: string }) => test.status === "failed",
+			).length,
+			pending: tests.filter(
+				(test: { status: string }) => test.status === "pending",
+			).length,
+			skipped: tests.filter(
+				(test: { status: string }) => test.status === "skipped",
+			).length,
+			other: tests.filter((test: { status: string }) => test.status === "other")
+				.length,
+		};
+	}
 
-  private mapStatus(nightwatchStatus: string): TestStatus {
-    switch (nightwatchStatus) {
-      case 'pass':
-        return 'passed'
-      case 'fail':
-        return 'failed'
-      case 'skipped':
-        return 'skipped'
-      case 'pending':
-        return 'pending'
-      default:
-        return 'other'
-    }
-  }
+	private mapStatus(nightwatchStatus: string): TestStatus {
+		switch (nightwatchStatus) {
+			case "pass":
+				return "passed";
+			case "fail":
+				return "failed";
+			case "skipped":
+				return "skipped";
+			case "pending":
+				return "pending";
+			default:
+				return "other";
+		}
+	}
 
-  setEnvironmentDetails(reporterConfigOptions: ReporterConfigOptions): void {
-    if (reporterConfigOptions.appName !== undefined) {
-      this.ctrfEnvironment.appName = reporterConfigOptions.appName
-    }
-    if (reporterConfigOptions.appVersion !== undefined) {
-      this.ctrfEnvironment.appVersion = reporterConfigOptions.appVersion
-    }
-    if (reporterConfigOptions.osPlatform !== undefined) {
-      this.ctrfEnvironment.osPlatform = reporterConfigOptions.osPlatform
-    }
-    if (reporterConfigOptions.osRelease !== undefined) {
-      this.ctrfEnvironment.osRelease = reporterConfigOptions.osRelease
-    }
-    if (reporterConfigOptions.osVersion !== undefined) {
-      this.ctrfEnvironment.osVersion = reporterConfigOptions.osVersion
-    }
-    if (reporterConfigOptions.buildName !== undefined) {
-      this.ctrfEnvironment.buildName = reporterConfigOptions.buildName
-    }
-    if (reporterConfigOptions.buildNumber !== undefined) {
-      this.ctrfEnvironment.buildNumber = reporterConfigOptions.buildNumber
-    }
-    if (reporterConfigOptions.buildUrl !== undefined) {
-      this.ctrfEnvironment.buildUrl = reporterConfigOptions.buildUrl
-    }
-    if (reporterConfigOptions.repositoryName !== undefined) {
-      this.ctrfEnvironment.repositoryName = reporterConfigOptions.repositoryName
-    }
-    if (reporterConfigOptions.repositoryUrl !== undefined) {
-      this.ctrfEnvironment.repositoryUrl = reporterConfigOptions.repositoryUrl
-    }
-    if (reporterConfigOptions.branchName !== undefined) {
-      this.ctrfEnvironment.branchName = reporterConfigOptions.branchName
-    }
-    if (reporterConfigOptions.testEnvironment !== undefined) {
-      this.ctrfEnvironment.testEnvironment =
-        reporterConfigOptions.testEnvironment
-    }
-  }
+	setEnvironmentDetails(reporterConfigOptions: ReporterConfigOptions): void {
+		if (reporterConfigOptions.appName !== undefined) {
+			this.ctrfEnvironment.appName = reporterConfigOptions.appName;
+		}
+		if (reporterConfigOptions.appVersion !== undefined) {
+			this.ctrfEnvironment.appVersion = reporterConfigOptions.appVersion;
+		}
+		if (reporterConfigOptions.osPlatform !== undefined) {
+			this.ctrfEnvironment.osPlatform = reporterConfigOptions.osPlatform;
+		}
+		if (reporterConfigOptions.osRelease !== undefined) {
+			this.ctrfEnvironment.osRelease = reporterConfigOptions.osRelease;
+		}
+		if (reporterConfigOptions.osVersion !== undefined) {
+			this.ctrfEnvironment.osVersion = reporterConfigOptions.osVersion;
+		}
+		if (reporterConfigOptions.buildName !== undefined) {
+			this.ctrfEnvironment.buildName = reporterConfigOptions.buildName;
+		}
+		if (reporterConfigOptions.buildNumber !== undefined) {
+			this.ctrfEnvironment.buildNumber = reporterConfigOptions.buildNumber;
+		}
+		if (reporterConfigOptions.buildUrl !== undefined) {
+			this.ctrfEnvironment.buildUrl = reporterConfigOptions.buildUrl;
+		}
+		if (reporterConfigOptions.repositoryName !== undefined) {
+			this.ctrfEnvironment.repositoryName =
+				reporterConfigOptions.repositoryName;
+		}
+		if (reporterConfigOptions.repositoryUrl !== undefined) {
+			this.ctrfEnvironment.repositoryUrl = reporterConfigOptions.repositoryUrl;
+		}
+		if (reporterConfigOptions.branchName !== undefined) {
+			this.ctrfEnvironment.branchName = reporterConfigOptions.branchName;
+		}
+		if (reporterConfigOptions.testEnvironment !== undefined) {
+			this.ctrfEnvironment.testEnvironment =
+				reporterConfigOptions.testEnvironment;
+		}
+	}
 
-  hasEnvironmentDetails(environment: NightwatchEnvironment): boolean {
-    return Object.keys(environment).length > 0
-  }
+	hasEnvironmentDetails(environment: NightwatchEnvironment): boolean {
+		return Object.keys(environment).length > 0;
+	}
 
-  private writeReportToFile(data: NightwatchCTRFReport): void {
-    const filePath = path.join(
-      this.reporterOptions.outputDir ?? this.defaultOutputDir,
-      this.reporterOptions.outputFile ?? this.defaultOutputFile
-    )
-    const str = JSON.stringify(data, null, 2)
-    try {
-      fs.writeFileSync(filePath, str + '\n')
-      console.log(
-        `${this.reporterName}: successfully written ctrf json to %s/%s`,
-        this.reporterOptions.outputDir,
-        this.reporterOptions.outputFile
-      )
-    } catch (error) {
-      console.error(`Error writing ctrf json report:, ${String(error)}`)
-    }
-  }
+	private writeReportToFile(data: NightwatchCTRFReport): void {
+		const filePath = path.join(
+			this.reporterOptions.outputDir ?? this.defaultOutputDir,
+			this.reporterOptions.outputFile ?? this.defaultOutputFile,
+		);
+		const str = JSON.stringify(data, null, 2);
+		try {
+			fs.writeFileSync(filePath, `${str}\n`);
+			console.log(
+				`${this.reporterName}: successfully written ctrf json to %s/%s`,
+				this.reporterOptions.outputDir,
+				this.reporterOptions.outputFile,
+			);
+		} catch (error) {
+			console.error(`Error writing ctrf json report:, ${String(error)}`);
+		}
+	}
 }
 
-export default GenerateCtrfReport
+export default GenerateCtrfReport;
