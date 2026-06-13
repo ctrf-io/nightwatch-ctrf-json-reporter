@@ -1,5 +1,5 @@
-import fs = require("node:fs");
-import path = require("node:path");
+import fs from "node:fs";
+import path from "node:path";
 import type { NightwatchOptions } from "nightwatch";
 import type {
 	CTRFReport,
@@ -51,7 +51,7 @@ interface ReporterConfigOptions {
 	testEnvironment?: string | undefined;
 }
 
-class GenerateCtrfReport {
+export default class GenerateCtrfReport {
 	private readonly ctrfReport: NightwatchCTRFReport;
 	readonly ctrfEnvironment: NightwatchEnvironment;
 	private reporterOptions: ReporterConfigOptions;
@@ -305,5 +305,3 @@ class GenerateCtrfReport {
 		}
 	}
 }
-
-export default GenerateCtrfReport;
