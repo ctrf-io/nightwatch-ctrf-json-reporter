@@ -1,12 +1,27 @@
 {
 	"compilerOptions": {
-		"target": "es6",
-		"module": "commonjs",
+		"target": "ES2023",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
 		"strict": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
 		"outDir": "./dist",
 		"rootDir": "./src",
 		"declaration": true,
-		"skipLibCheck": true
+		"declarationDir": "./dist",
+		"forceConsistentCasingInFileNames": true,
+		"types": ["nightwatch", "node"],
+		"skipLibCheck": true,
+		"ignoreDeprecations": "6.0"
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*", "types/**/*"],
+	"exclude": [
+		"tests/**/*",
+		"dist/**/*",
+		"node_modules/**/*",
+		"coverage/**/*",
+		"ctrf/**/*",
+		"vitest.config.ts"
+	]
 }
