@@ -1,3 +1,4 @@
+import { validateStrict } from "ctrf";
 import GenerateCtrfReport from "../src/generate-report";
 
 describe("GenerateCtrfReport", () => {
@@ -31,11 +32,13 @@ describe("GenerateCtrfReport", () => {
 				name: "passes test",
 				status: "passed",
 				duration: 12,
+				suite: ["sample module"],
 			},
 			{
 				name: "fails test",
 				status: "failed",
 				duration: 34,
+				suite: ["sample module"],
 				message: "expected true to be false",
 				trace: "AssertionError: expected true to be false",
 			},
@@ -43,6 +46,7 @@ describe("GenerateCtrfReport", () => {
 				name: "runtime skipped test",
 				status: "skipped",
 				duration: 0,
+				suite: ["sample module"],
 			},
 		]);
 	});
@@ -70,5 +74,14 @@ describe("GenerateCtrfReport", () => {
 			pending: 1,
 			other: 1,
 		});
+	});
+
+	it("produces a report that passes strict CTRF 0.1.0 validation", () => {
+		const reporter = new GenerateCtrfReport();
+		const ctrfReport = (
+			reporter as unknown as { ctrfReport: Record<string, unknown> }
+		).ctrfReport;
+
+		expect(() => validateStrict(ctrfReport)).not.toThrow();
 	});
 });
