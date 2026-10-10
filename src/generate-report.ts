@@ -1,3 +1,10 @@
+import {
+	identityValue,
+	runIdentity,
+	testIdentity,
+	type IdentityOptions,
+} from "./identity";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { NightwatchOptions } from "nightwatch";
@@ -15,7 +22,7 @@ import type {
 	NightwatchResult,
 } from "../types/nightwatch.d";
 
-interface ReporterConfigOptions {
+interface ReporterConfigOptions extends IdentityOptions {
 	outputFile?: string;
 	outputDir?: string;
 	minimal?: boolean;
@@ -49,6 +56,7 @@ export default class GenerateCtrfReport {
 		this.ctrfReport = {
 			reportFormat: "CTRF",
 			specVersion: CURRENT_SPEC_VERSION,
+			reportId: randomUUID(),
 			generatedBy: "nightwatch-ctrf-json-reporter",
 			results: {
 				tool: {
@@ -88,6 +96,9 @@ export default class GenerateCtrfReport {
 		done: () => void,
 	): void {
 		this.reporterOptions = {
+			runId: options.globals?.ctrf?.runId,
+			shardId: identityValue(options.globals?.ctrf?.shardId, "shardId"),
+			testIdResolver: options.globals?.ctrf?.testIdResolver,
 			outputFile: options.globals?.ctrf?.outputFile ?? this.defaultOutputFile,
 			outputDir: options.globals?.ctrf?.outputDir ?? this.defaultOutputDir,
 			minimal: options.globals?.ctrf?.minimal ?? false,
@@ -106,6 +117,10 @@ export default class GenerateCtrfReport {
 			testEnvironment: options.globals?.ctrf?.testEnvironment ?? undefined,
 		};
 
+		for (const key of Object.keys(this.ctrfEnvironment))
+			delete (this.ctrfEnvironment as Record<string, unknown>)[key];
+		this.ctrfReport.reportId = randomUUID();
+		this.ctrfReport.runId = runIdentity(this.reporterOptions.runId);
 		this.setEnvironmentDetails(this.reporterOptions ?? {});
 		if (this.hasEnvironmentDetails(this.ctrfEnvironment)) {
 			this.ctrfReport.results.environment = this.ctrfEnvironment;
@@ -150,6 +165,16 @@ export default class GenerateCtrfReport {
 
 		if (this.isTestSkipped(module)) {
 			tests.push({
+				testId: testIdentity(
+					"nightwatch",
+					{
+						name: moduleName,
+						suite: [moduleName],
+						variant: "module-placeholder",
+					},
+					this.reporterOptions,
+				),
+				executionId: randomUUID(),
 				name: moduleName,
 				status: "skipped",
 				duration: 0,
@@ -160,6 +185,12 @@ export default class GenerateCtrfReport {
 				const test = module.completed[testName];
 
 				const result: NightwatchTest = {
+					testId: testIdentity(
+						"nightwatch",
+						{ name: testName, suite: [moduleName], variant: "test" },
+						this.reporterOptions,
+					),
+					executionId: randomUUID(),
 					name: testName,
 					status: this.mapStatus(test.status),
 					duration: test.timeMs,
@@ -185,6 +216,12 @@ export default class GenerateCtrfReport {
 		moduleName: string,
 	): NightwatchTest[] {
 		return module.skippedAtRuntime.map((skippedTestName: string) => ({
+			testId: testIdentity(
+				"nightwatch",
+				{ name: skippedTestName, suite: [moduleName], variant: "test" },
+				this.reporterOptions,
+			),
+			executionId: randomUUID(),
 			name: skippedTestName,
 			status: "skipped",
 			duration: 0,
@@ -233,6 +270,11 @@ export default class GenerateCtrfReport {
 	}
 
 	setEnvironmentDetails(reporterConfigOptions: ReporterConfigOptions): void {
+		if (reporterConfigOptions.shardId !== undefined)
+			this.ctrfEnvironment.shardId = identityValue(
+				reporterConfigOptions.shardId,
+				"shardId",
+			);
 		if (reporterConfigOptions.appName !== undefined) {
 			this.ctrfEnvironment.appName = reporterConfigOptions.appName;
 		}

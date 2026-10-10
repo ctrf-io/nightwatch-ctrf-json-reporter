@@ -27,7 +27,7 @@ describe("GenerateCtrfReport", () => {
 			"sample module",
 		);
 
-		expect(tests).toEqual([
+		expect(tests).toMatchObject([
 			{
 				name: "passes test",
 				status: "passed",
@@ -76,7 +76,7 @@ describe("GenerateCtrfReport", () => {
 		});
 	});
 
-	it("produces a report that passes strict CTRF 0.1.0 validation", () => {
+	it("produces a report that passes strict CTRF 0.2.0 validation", () => {
 		const reporter = new GenerateCtrfReport();
 		const ctrfReport = (
 			reporter as unknown as { ctrfReport: Record<string, unknown> }
