@@ -1,5 +1,8 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, it, expect } from "vitest";
-import { identityValue, runIdentity, testIdentity } from "../src/identity";
+import { identityValue, testIdentity } from "../src/identity";
 
 describe("identity semantics", () => {
 	it("normalizes paths but preserves suite component boundaries", () => {
@@ -18,9 +21,29 @@ describe("identity semantics", () => {
 			testIdentity("runner", { ...a, filePath: "tests/other.ts" }),
 		);
 	});
-	it("shares configured run identity and creates independent standalone runs", () => {
-		expect(runIdentity("coordinated-run")).toBe("coordinated-run");
-		expect(runIdentity()).not.toBe(runIdentity());
+	it("includes only explicitly supplied run identity", () => {
+		const reporter = new Reporter();
+		const directory = fs.mkdtempSync(
+			path.join(os.tmpdir(), "ctrf-nightwatch-run-"),
+		);
+		try {
+			for (const runId of [undefined, "", "coordinated-run"]) {
+				reporter.write(
+					{
+						startTimestamp: "2026-10-10T10:00:00Z",
+						endTimestamp: "2026-10-10T10:00:01Z",
+						modules: {},
+					} as never,
+					{ globals: { ctrf: { runId, outputDir: directory } } } as never,
+					() => {},
+				);
+				expect(JSON.parse(JSON.stringify(reporter.ctrfReport)).runId).toBe(
+					runId || undefined,
+				);
+			}
+		} finally {
+			fs.rmSync(directory, { recursive: true, force: true });
+		}
 		expect(() => identityValue(" ", "shardId")).toThrow();
 	});
 	it("supports an explicit case resolver without allowing empty identity", () => {

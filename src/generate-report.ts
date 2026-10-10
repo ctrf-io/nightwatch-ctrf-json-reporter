@@ -1,9 +1,4 @@
-import {
-	identityValue,
-	runIdentity,
-	testIdentity,
-	type IdentityOptions,
-} from "./identity";
+import { identityValue, testIdentity, type IdentityOptions } from "./identity";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -120,7 +115,7 @@ export default class GenerateCtrfReport {
 		for (const key of Object.keys(this.ctrfEnvironment))
 			delete (this.ctrfEnvironment as Record<string, unknown>)[key];
 		this.ctrfReport.reportId = randomUUID();
-		this.ctrfReport.runId = runIdentity(this.reporterOptions.runId);
+		this.ctrfReport.runId = this.reporterOptions.runId || undefined;
 		this.setEnvironmentDetails(this.reporterOptions ?? {});
 		if (this.hasEnvironmentDetails(this.ctrfEnvironment)) {
 			this.ctrfReport.results.environment = this.ctrfEnvironment;
