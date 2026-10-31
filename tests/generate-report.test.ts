@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { validateStrict } from "ctrf";
 import GenerateCtrfReport from "../src/generate-report";
 
@@ -84,4 +85,48 @@ describe("GenerateCtrfReport", () => {
 
 		expect(() => validateStrict(ctrfReport)).not.toThrow();
 	});
+});
+
+describe("buildNumber configuration", () => {
+	for (const [buildNumber, expected, warningCount] of [
+		[0, 0, 0],
+		[-1, -1, 0],
+		[100, 100, 0],
+		[Number.MAX_SAFE_INTEGER + 1, Number.MAX_SAFE_INTEGER + 1, 0],
+		[undefined, undefined, 0],
+		[1.5, undefined, 1],
+		[NaN, undefined, 1],
+		[Infinity, undefined, 1],
+		[-Infinity, undefined, 1],
+	] as const) {
+		it(`serializes ${String(buildNumber)} with ${warningCount} warning(s)`, () => {
+			const warn = console.warn;
+			const warnings: unknown[] = [];
+			console.warn = (message) => warnings.push(message);
+			try {
+				const reporter = new GenerateCtrfReport();
+				reporter.setEnvironmentDetails({ buildNumber });
+				const state = reporter as unknown as {
+					ctrfReport: { results: { environment: unknown } };
+					ctrfEnvironment: unknown;
+				};
+				state.ctrfReport.results.environment = state.ctrfEnvironment;
+				const report = JSON.parse(JSON.stringify(state.ctrfReport));
+				assert.equal(report.results.environment?.buildNumber, expected);
+				assert.equal(
+					Object.hasOwn(report.results.environment ?? {}, "buildNumber"),
+					expected !== undefined,
+				);
+				assert.equal(warnings.length, warningCount);
+				if (warningCount)
+					assert.equal(
+						warnings[0],
+						"[CTRF] buildNumber must be a finite integer; omitting invalid value.",
+					);
+				assert.doesNotThrow(() => validateStrict(report));
+			} finally {
+				console.warn = warn;
+			}
+		});
+	}
 });

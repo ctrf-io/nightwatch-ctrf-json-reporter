@@ -129,51 +129,21 @@ for (const id of [
 	"conformance/report/single-json-object",
 ]) {
 	const entry = catalogue.entries.find((e) => e.id === id);
-	test(`Nightwatch matcher / ${id} reproduces both exact defects`, () => {
-		const result = runConformance(entry, context, "unit");
-		assert.equal(result.issue, "invalid-build-number");
-		assert.deepEqual(result.samples, [
-			"fractional-build-number",
-			"nonfinite-build-number",
-		]);
-	});
-	test(`Nightwatch matcher / ${id} rejects a partial fix`, () => {
+	test(
+		"Nightwatch build numbers / " + id + " passes without an exception",
+		() => {
+			assert.equal(runConformance(entry, context, "unit"), undefined);
+		},
+	);
+	test("Nightwatch build numbers / " + id + " rejects invalid output", () => {
 		const c = cloneContext();
 		const sample = c.samples.find((s) => s.name === "fractional-build-number");
-		sample.report.results.environment.buildNumber = 0;
-		sample.expected.results.environment = { buildNumber: 0 };
+		sample.report.results.environment = {
+			...sample.report.results.environment,
+			buildNumber: 1.5,
+		};
 		sample.bytes = Buffer.from(JSON.stringify(sample.report));
-		assert.throws(() => runConformance(entry, c, "unit"), /Unexpected pass/);
-	});
-	test(`Nightwatch matcher / ${id} rejects changed violations`, () => {
-		const c = cloneContext();
-		const sample = c.samples.find((s) => s.name === "fractional-build-number");
-		sample.report.results.environment.buildNumber = "wrong";
-		sample.bytes = Buffer.from(JSON.stringify(sample.report));
-		assert.throws(() => runConformance(entry, c, "unit"));
-	});
-	test(`Nightwatch matcher / ${id} requires every recorded sample`, () => {
-		assert.throws(
-			() =>
-				runConformance(
-					entry,
-					{
-						...context,
-						samples: context.samples.filter(
-							(s) => s.name !== "nonfinite-build-number",
-						),
-					},
-					"unit",
-				),
-			/fixture missing/,
-		);
-	});
-	test(`Nightwatch matcher / ${id} rejects unrelated sample failures`, () => {
-		const c = cloneContext();
-		const sample = c.samples.find((s) => s.name === "full");
-		sample.report.results.environment.buildNumber = "wrong";
-		sample.bytes = Buffer.from(JSON.stringify(sample.report));
-		assert.throws(() => runConformance(entry, c, "unit"));
+		assert.throws(() => runConformance(entry, c, "unit"), /must be integer/);
 	});
 }
 test("Nightwatch behavior / zero build number is preserved", () =>
