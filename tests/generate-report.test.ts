@@ -77,7 +77,7 @@ describe("GenerateCtrfReport", () => {
 		});
 	});
 
-	it("produces a report that passes strict CTRF 0.2.0 validation", () => {
+	it("produces a report that passes strict CTRF 0.3.0 validation", () => {
 		const reporter = new GenerateCtrfReport();
 		const ctrfReport = (
 			reporter as unknown as { ctrfReport: Record<string, unknown> }

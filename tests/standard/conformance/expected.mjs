@@ -76,7 +76,7 @@ export function expectedReport(native, options) {
 		summary[status] = tests.filter((t) => t.status === status).length;
 	return {
 		reportFormat: "CTRF",
-		specVersion: "0.2.0",
+		specVersion: "0.3.0",
 		generatedBy: "nightwatch-ctrf-json-reporter",
 		...(options.runId ? { runId: options.runId } : {}),
 		results: {
